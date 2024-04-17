@@ -1,0 +1,4 @@
+repository "final-project@protolate@cloud"
+  path "/"
+    br "/main"
+    co "/main"
