@@ -1,25 +1,27 @@
 ﻿<Properties StartupConfiguration="{9C676BAD-7301-D702-2DA8-45431CCD8175}|">
-  <MultiItemStartupConfigurations />
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
-  <MonoDevelop.Ide.DebuggingService.Breakpoints>
-    <BreakpointStore />
-  </MonoDevelop.Ide.DebuggingService.Breakpoints>
-  <MonoDevelop.Ide.ItemProperties.Assembly-CSharp PreferredExecutionTarget="5bb23c8c-42a4-4e68-9750-73eda08b27bc" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Simulation.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets/Scripts/Simulation.cs">
     <Files>
-      <File FileName="Assets/Simulation.cs" Line="1" Column="1" />
+      <File FileName="Assets/Scripts/Simulation.cs" Line="1" Column="1" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
         <State name="__root__">
-          <Node name="final-project" expanded="True">
+          <Node name="final-project">
             <Node name="Assets" expanded="True">
-              <Node name="Simulation.cs" selected="True" />
+              <Node name="Scripts" expanded="True">
+                <Node name="Simulation.cs" selected="True" />
+              </Node>
             </Node>
           </Node>
         </State>
       </Pad>
     </Pads>
   </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.ItemProperties.Assembly-CSharp PreferredExecutionTarget="5c73d216-6fba-4ed4-809a-588db1d2a164" />
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MultiItemStartupConfigurations />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
 </Properties>

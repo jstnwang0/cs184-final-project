@@ -247,10 +247,13 @@ MonoBehaviour:
   gravity: 9.8
   damping: 0.9
   num_p_width: 10
-  num_p_height: 5
-  particles_width: 20
+  num_p_depth: 10
+  num_p_height: 10
+  particles_width: 25
+  particles_depth: 25
   particles_height: 20
   bounding_width: 30
+  bounding_depth: 30
   bounding_height: 30
   radius: 0.5
   particle: {fileID: 8994291356995993447, guid: 360c983e1398a44678e7763949fd8d02, type: 3}
@@ -263,7 +266,7 @@ Transform:
   m_GameObject: {fileID: 1082575413}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -2.27, y: 1.55, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
