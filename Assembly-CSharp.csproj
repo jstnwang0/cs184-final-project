@@ -60,7 +60,25 @@
     <Analyzer Include="/Applications/Unity/Hub/Editor/2022.3.24f1/Unity.app/Contents/Tools/Unity.SourceGenerators/Unity.Properties.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets/Datastructures/KDTree/KDQuery/Base.cs" />
+    <Compile Include="Assets/Datastructures/Heap/MinHeap.cs" />
+    <Compile Include="Assets/Datastructures/KDTree/KDQuery/Debug.cs" />
+    <Compile Include="Assets/Datastructures/Heap/KSmallest.cs" />
     <Compile Include="Assets/Scripts/Simulation.cs" />
+    <Compile Include="Assets/Datastructures/Tests/KDTreeBenchmark.cs" />
+    <Compile Include="Assets/Datastructures/KDTree/KDQuery/QueryRadius.cs" />
+    <Compile Include="Assets/Datastructures/KDTree/KDNode.cs" />
+    <Compile Include="Assets/Datastructures/KDTree/KDQuery/QueryClosest.cs" />
+    <Compile Include="Assets/Datastructures/Tests/KDTreeQueryResizeTests.cs" />
+    <Compile Include="Assets/Datastructures/KDTree/KDQuery/QueryKNearest.cs" />
+    <Compile Include="Assets/Datastructures/Tests/KDTreeQueryTests.cs" />
+    <Compile Include="Assets/Datastructures/Heap/BaseHeap.cs" />
+    <Compile Include="Assets/Datastructures/KDTree/KDBounds.cs" />
+    <Compile Include="Assets/Datastructures/KDTree/KDQuery/QueryInterval.cs" />
+    <Compile Include="Assets/Datastructures/Heap/MaxHeap.cs" />
+    <Compile Include="Assets/Datastructures/KDTree/KDTree.cs" />
+    <Compile Include="Assets/Datastructures/KDTree/KDQuery/KDQueryNode.cs" />
+    <Compile Include="Assets/Datastructures/Tests/HeapTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">
