@@ -21,12 +21,13 @@ public class Simulation : MonoBehaviour
     public int bounding_depth;
     public int bounding_height;
 
+    [Range(0.1f, 10)]
     public float density_radius;
     public float target_density;
     public float pressure_multiplier;
 
-    [Range(0.2f, 5)]
-    public float radius;
+    [Range(0.05f, 3)]
+    public float display_radius;
 
     public GameObject particle;
 
@@ -54,9 +55,11 @@ public class Simulation : MonoBehaviour
             {
                 for (int k = 0; k < num_p_depth; k++)
                 {
-                    Vector3 pos = new(width_space * j - (float)particles_width / 2, 5 + (height_space * i - (float)particles_height / 2), depth_space * k - (float)particles_depth / 2);
+                    Vector3 pos = new(width_space * j - (float)particles_width / 2, height_space * i - (float) particles_height / 2, depth_space * k - (float)particles_depth / 2);
                     particles[x] = Instantiate(particle, pos, transform.rotation);
+                    particles[x].transform.localScale = Vector3.one * 2 * display_radius;
                     positions[x] = pos;
+
                     //System.Random rnd = new System.Random();
                     //velocities[x] = new Vector3((float)rnd.NextDouble(), (float)rnd.NextDouble(), (float)rnd.NextDouble());
                     x++;
@@ -69,10 +72,11 @@ public class Simulation : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        runSimStep(Time.deltaTime);
+        RunSimStep(Time.deltaTime);
+        //print(densities[500]);
     }
 
-    void runSimStep(float deltaTime)
+    void RunSimStep(float deltaTime)
     {
         // Calculate densities
         Parallel.For(0, num_particles, i =>
@@ -83,9 +87,8 @@ public class Simulation : MonoBehaviour
         // Add pressure force and gravity
         Parallel.For(0, num_particles, i =>
         {
-            //particles[i].transform.localScale = Vector3.one * 2 * radius;
             velocities[i] += new Vector3(0, -gravity, 0) * deltaTime;
-            velocities[i] += CalculateDensityGradient(i) / densities[i] * deltaTime;
+            velocities[i] += CalculatePressureGradient(i) / densities[i] * deltaTime;
         });
 
         // Handle collisions with box
@@ -93,10 +96,10 @@ public class Simulation : MonoBehaviour
         {
             positions[i] += velocities[i] * deltaTime;
 
-            if ((float)(bounding_height / 2) - Mathf.Abs(positions[i].y) < radius)
+            if ((bounding_height / 2) - Mathf.Abs(positions[i].y) < display_radius)
             {
                 velocities[i].y *= -1 * damping;
-                float over_amt = radius - ((float)(bounding_height / 2) - Mathf.Abs(positions[i].y));
+                float over_amt = display_radius - ((bounding_height / 2) - Mathf.Abs(positions[i].y));
                 if (positions[i].y > 0)
                 {
                     positions[i] -= new Vector3(0, 2 * over_amt, 0);
@@ -108,10 +111,10 @@ public class Simulation : MonoBehaviour
 
             }
 
-            if ((float)(bounding_width / 2) - Mathf.Abs(positions[i].x) < radius)
+            if ((bounding_width / 2) - Mathf.Abs(positions[i].x) < display_radius)
             {
                 velocities[i].x *= -1 * damping;
-                float over_amt = radius - ((float)(bounding_width / 2) - Mathf.Abs(positions[i].x));
+                float over_amt = display_radius - ((bounding_width / 2) - Mathf.Abs(positions[i].x));
                 if (positions[i].x > 0)
                 {
                     positions[i] -= new Vector3(2 * over_amt, 0, 0);
@@ -123,10 +126,10 @@ public class Simulation : MonoBehaviour
 
             }
 
-            if ((float)(bounding_width / 2) - Mathf.Abs(positions[i].z) < radius)
+            if ((bounding_width / 2) - Mathf.Abs(positions[i].z) < display_radius)
             {
                 velocities[i].z *= -1 * damping;
-                float over_amt = radius - ((float)(bounding_width / 2) - Mathf.Abs(positions[i].z));
+                float over_amt = display_radius - ((bounding_width / 2) - Mathf.Abs(positions[i].z));
                 if (positions[i].z > 0)
                 {
                     positions[i] -= new Vector3(0, 0, 2 * over_amt);
@@ -147,28 +150,25 @@ public class Simulation : MonoBehaviour
         }
     }
 
-    float CalculateStrength(float dist, float radius)
-    {
-        if (dist > radius)
-        {
-            return 0;
-        }
-
-        float volume = 2 * Mathf.PI * Mathf.Pow(radius, 5) / 15;
-
-        return (radius - dist) * (radius - dist) / volume;
-    }
-
     float CalculateDensity(int p_index)
     {
-        float density = 0;
+        float count = 0;
+        float volume = 2 * Mathf.PI * Mathf.Pow(density_radius, 5) / 15;
+        //float volume = 4 * Mathf.PI * Mathf.Pow(density_radius, 3) / 3;
         for (int i = 0; i < num_particles; i++)
         {
             float dist = (positions[i] - positions[p_index]).magnitude;
-            density += CalculateStrength(dist, density_radius);
+
+            if (dist > density_radius)
+            {
+                continue;
+            }
+            count += (density_radius - dist) * (density_radius - dist);
+            //count += 1;
         }
-        return density;
+        return count / volume;
     }
+
 
     float CalculatePressure(float d1, float d2)
     {
@@ -177,9 +177,9 @@ public class Simulation : MonoBehaviour
         return (p1 + p2) / 2;
     }
 
-    Vector3 CalculateDensityGradient(int p_index)
+    Vector3 CalculatePressureGradient(int p_index)
     {
-        Vector3 gradient = new Vector3();
+        Vector3 gradient = new();
         for (int i = 0; i < num_particles; i++)
         {
             if (i == p_index)
@@ -189,9 +189,22 @@ public class Simulation : MonoBehaviour
 
             Vector3 dir = (positions[i] - positions[p_index]);
             float dist = dir.magnitude;
-            dir /= dist;
-            float strength = CalculateStrength(dist, density_radius);
-            gradient += CalculatePressure(densities[i], densities[p_index]) * dir * strength / densities[i];
+
+            if (dist > density_radius)
+            {
+                continue;
+            }
+
+            if (dist == 0)
+            {
+                dir = new Vector3(1, 0, 0);
+            } else
+            {
+                dir /= dist;
+            }
+            
+            float strength = (dist - density_radius) * 15 / (Mathf.PI * Mathf.Pow(density_radius, 5));
+            gradient += CalculatePressure(densities[i], densities[p_index]) * strength * dir / densities[i];
         }
         return gradient;
     }

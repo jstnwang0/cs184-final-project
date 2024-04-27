@@ -246,16 +246,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gravity: 9.8
   damping: 0.9
-  num_p_width: 10
-  num_p_depth: 10
-  num_p_height: 10
-  particles_width: 25
-  particles_depth: 25
-  particles_height: 20
-  bounding_width: 30
-  bounding_depth: 30
-  bounding_height: 30
-  radius: 0.5
+  num_p_width: 15
+  num_p_depth: 15
+  num_p_height: 15
+  particles_width: 8
+  particles_depth: 8
+  particles_height: 8
+  bounding_width: 10
+  bounding_depth: 10
+  bounding_height: 10
+  density_radius: 3
+  target_density: 3
+  pressure_multiplier: 10
+  display_radius: 0.2
   particle: {fileID: 8994291356995993447, guid: 360c983e1398a44678e7763949fd8d02, type: 3}
 --- !u!4 &1082575415
 Transform:
