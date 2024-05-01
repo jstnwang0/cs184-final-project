@@ -6,10 +6,21 @@ using System;
 using DataStructures.ViliWonka.KDTree;
 using UnityEditor.Search;
 using static UnityEditor.PlayerSettings;
+using static MarchingCube;
+using UnityEngine.ProBuilder;
+using UnityEngine.ProBuilder.MeshOperations;
+using Math = System.Math;
+using UnityEditor.ProBuilder;
+
+
+
+
+
 
 
 public class Simulation : MonoBehaviour
 {
+
     public float gravity;
     [Range(0f, 1f)]
     public float damping;
@@ -34,6 +45,13 @@ public class Simulation : MonoBehaviour
     public float display_radius;
 
     public GameObject particle;
+    public ComputeShader computeShader;
+    public Shader shader;
+    public Material material;
+    public Mesh mesh;
+    public int mesh_res;
+    public double isolevel;
+
 
     int num_particles;
     GameObject[] particles;
@@ -106,7 +124,7 @@ public class Simulation : MonoBehaviour
     void Start()
     {
         num_particles = num_p_width * num_p_depth * num_p_height;
-        particles = new GameObject[num_particles];
+        //particles = new GameObject[num_particles];
         positions = new Vector3[num_particles];
         velocities = new Vector3[num_particles];
         densities = new float[num_particles];
@@ -135,8 +153,8 @@ public class Simulation : MonoBehaviour
                 for (int k = 0; k < num_p_depth; k++)
                 {
                     Vector3 pos = new(width_space * j - (float)particles_width / 2, height_space * i - (float) particles_height / 2, depth_space * k - (float)particles_depth / 2);
-                    particles[x] = Instantiate(particle, pos, transform.rotation);
-                    particles[x].transform.localScale = Vector3.one * 2 * display_radius;
+                    //particles[x] = Instantiate(particle, pos, transform.rotation);
+                    //particles[x].transform.localScale = Vector3.one * 2 * display_radius;
                     positions[x] = pos;
 
                     AddGridPoint(x);
@@ -145,16 +163,120 @@ public class Simulation : MonoBehaviour
                 }
             }
         }
-        
+        MakeGrid();
+        March();
     }
 
     // Update is called once per frame
     void Update()
     {
-        RunSimStep(Time.deltaTime);
+        RunSimStep(Time.deltaTime, Time.fixedTime);
+
+        MakeGridWithRes();
+        March();
+        
     }
 
-    void RunSimStep(float deltaTime)
+    void MakeGrid()
+    {
+        MarchingCube.grd = new GridPoint[grid_width,grid_height, grid_depth];
+        for(int i = 0; i < grid_width; i++)
+        {
+            for(int j = 0; j < grid_height; j++)
+            {
+                for(int k = 0; k < grid_depth; k++)
+                {
+                    MarchingCube.grd[i, j, k] = new GridPoint();
+                    MarchingCube.grd[i, j, k].Position = new Vector3(i / (float)grid_width * bounding_width-5,  j/(float)grid_height * bounding_height-5, k / (float)grid_depth * bounding_depth - 5);
+                    if (spatialGrid[j * grid_depth * grid_width + k * grid_width + i].Count > 0)
+                    {
+                        MarchingCube.grd[i, j, k].On = true;
+                        
+                    }
+                    
+                }
+            }
+        }    
+    }
+
+    void MakeGridWithRes()
+    {
+        MarchingCube.grd = new GridPoint[mesh_res, mesh_res*2, mesh_res];
+        Parallel.For(0, mesh_res, i =>
+        {
+            Parallel.For(0, mesh_res * 2, j =>
+            {
+                Parallel.For(0, mesh_res, k =>
+                {
+                    MarchingCube.grd[i, j, k] = new GridPoint();
+                    MarchingCube.grd[i, j, k].Position = new Vector3(i / (float)mesh_res * bounding_width - bounding_width / 2, j / (float)mesh_res / 2f * bounding_height - bounding_height / 2, k / (float)mesh_res * bounding_depth - bounding_depth / 2);
+                    int cur_i = (int)Math.Floor(i / (float)mesh_res * bounding_width / density_radius);
+                    int cur_j = (int)Math.Floor(j / (float)mesh_res / 2f * bounding_height / density_radius);
+                    int cur_k = (int)Math.Floor(k / (float)mesh_res * bounding_depth / density_radius);
+
+                    double cur_density = 0;
+                    for (int offi = -1; offi <= 1; offi++)
+                    {
+                        for (int offj = -1; offj <= 1; offj++)
+                        {
+                            for (int offk = -1; offk <= 1; offk++)
+                            {
+                                if (cur_i + offi >= 0 && cur_i + offi < grid_width && cur_j + offj >= 0 && cur_j + offj < grid_height && cur_k + offk >= 0 && cur_k + offk < grid_depth)
+                                {
+
+                                    foreach (int p_idx in spatialGrid[(cur_j + offj) * grid_depth * grid_width + (cur_k + offk) * grid_width + (cur_i + offi)])
+                                    {
+                                        cur_density += 1 / densities[p_idx] * Smoothinng(MarchingCube.grd[i, j, k].Position - positions[p_idx], 2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+
+
+                    if (cur_density > isolevel)
+                    {
+                        MarchingCube.grd[i, j, k].On = true;
+
+                    }
+
+                });
+            });
+        });
+    }
+
+    void March()
+    {
+        
+        GameObject go = this.gameObject;
+        mesh = MarchingCube.GetMesh(ref go, ref material);
+        MarchingCube.Clear();
+        MarchingCube.MarchCubes();
+     
+        MarchingCube.SetMesh(ref mesh); 
+        
+    }
+
+    void MarchProbuild()
+    {
+        MarchingCube.Clear();
+        MarchingCube.MarchCubes();
+        ProBuilderMesh mesh =  MarchingCube.SetProBuilderMesh();
+        print(mesh.faceCount);
+        Smoothing.ApplySmoothingGroups(mesh, mesh.faces, 20);
+        mesh.SetMaterial(mesh.faces, material);
+        mesh.Refresh();
+        mesh.ToMesh();
+        
+    }
+
+    double Smoothinng(Vector3 r, double h)
+    {
+        return 315/(64 * Math.PI * Math.Pow(h,9))*Math.Pow((Math.Pow(h, 2) - Math.Pow(r.magnitude,2)), 3);
+    }
+
+    void RunSimStep(float deltaTime, float fixedTime)
     {
         // Calculate densities
         Parallel.For(0, num_particles, i =>
@@ -196,26 +318,26 @@ public class Simulation : MonoBehaviour
                 }
 
             }
-
-            if ((bounding_width / 2) - Mathf.Abs(positions[i].x) < display_radius)
+            float multiplier = (float)(0.75 + 0.25 * Mathf.Cos(fixedTime * 2 * Mathf.PI / 4));
+            if ((bounding_width * multiplier / 2) - Mathf.Abs(positions[i].x) < display_radius)
             {
                 velocities[i].x *= -1 * damping;
-                float over_amt = display_radius - ((bounding_width / 2) - Mathf.Abs(positions[i].x));
+                float over_amt = display_radius - ((bounding_width * multiplier / 2) - Mathf.Abs(positions[i].x));
                 if (positions[i].x > 0)
                 {
-                    positions[i] -= new Vector3(2 * over_amt, 0, 0);
+                    positions[i] -= new Vector3(2 * 1/multiplier *over_amt, 0, 0);
                 }
                 else
                 {
-                    positions[i] += new Vector3(2 * over_amt, 0, 0);
+                    positions[i] += new Vector3(2 * 1/multiplier * over_amt, 0, 0);
                 }
 
             }
 
-            if ((bounding_width / 2) - Mathf.Abs(positions[i].z) < display_radius)
+            if ((bounding_width  / 2) - Mathf.Abs(positions[i].z) < display_radius)
             {
                 velocities[i].z *= -1 * damping;
-                float over_amt = display_radius - ((bounding_width / 2) - Mathf.Abs(positions[i].z));
+                float over_amt = display_radius - ((bounding_width  / 2) - Mathf.Abs(positions[i].z));
                 if (positions[i].z > 0)
                 {
                     positions[i] -= new Vector3(0, 0, 2 * over_amt);
@@ -234,7 +356,7 @@ public class Simulation : MonoBehaviour
         for (int i = 0; i < num_particles; i++)
         {
             AddGridPoint(i);
-            particles[i].transform.position = positions[i];
+            //particles[i].transform.position = positions[i];
         }
     }
 
@@ -337,6 +459,6 @@ public class Simulation : MonoBehaviour
     {
         // Draw a yellow cube at the transform position
         Gizmos.color = Color.white;
-        Gizmos.DrawWireCube(new Vector3(0, 0, 0), new Vector3(bounding_width, bounding_height, bounding_depth));
+        //Gizmos.DrawWireCube(new Vector3(10, -10, -40), new Vector3(bounding_width, bounding_height, bounding_depth));
     }
 }
